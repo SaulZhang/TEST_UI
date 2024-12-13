@@ -1,0 +1,20 @@
+{
+    "units": {
+        "1": {
+            "containers": {
+                "1": ["Temperature anomaly detected"],
+                "2": [],
+                "3": ["Voltage spike recorded"],
+                "4": []
+            }
+        },
+        "2": {
+            "containers": {
+                "1": [],
+                "2": ["Cooling system failure"],
+                "3": [],
+                "4": []
+            }
+        }
+    }
+}

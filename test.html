@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Station Structure</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .unit, .container {
+            display: inline-block;
+            margin: 10px;
+            padding: 20px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+        .back {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #DC3545;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .container-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+        }
+        .alert {
+            background-color: #DC3545 !important;
+        }
+        .no-issues {
+            background-color: #28a745 !important;
+        }
+        .issue-view {
+            text-align: left;
+            margin: 20px auto;
+            width: 60%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-view">
+        <h1>电站结构图</h1>
+        <div class="unit" id="unit-1" onclick="showUnit(1)">Unit 1</div>
+        <div class="unit" id="unit-2" onclick="showUnit(2)">Unit 2</div>
+        <div class="unit" id="unit-3" onclick="showUnit(3)">Unit 3</div>
+        <div class="unit" id="unit-4" onclick="showUnit(4)">Unit 4</div>
+    </div>
+
+    <div id="unit-view" class="hidden">
+        <h1 id="unit-title"></h1>
+        <div id="container-list" class="container-list">
+            <!-- Containers will be dynamically populated -->
+        </div>
+        <div class="back" onclick="backToMain()">Back</div>
+    </div>
+
+    <div id="container-view" class="hidden">
+        <h1 id="container-title"></h1>
+        <div id="issue-list" class="issue-view">
+            <!-- Issues will be dynamically populated -->
+        </div>
+        <div class="back" onclick="backToUnit()">Back</div>
+    </div>
+
+    <script>
+        let jsonData = {};
+
+        // Load JSON data from external file
+        async function loadJsonData() {
+            try {
+                const response = await fetch('data.json'); // Replace 'data.json' with your file path
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                jsonData = await response.json();
+                highlightUnits();
+            } catch (error) {
+                alert("Error loading JSON data: " + error.message);
+                console.error("Error loading JSON data:", error);
+            }
+        }
+
+        function showUnit(unit) {
+            if (!jsonData.units || !jsonData.units[unit]) {
+                alert("Unit data is not available.");
+                return;
+            }
+
+            document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('unit-view').classList.remove('hidden');
+            document.getElementById('unit-title').innerText = `Unit ${unit} 的内部结构`;
+
+            const containerList = document.getElementById('container-list');
+            containerList.innerHTML = '';
+
+            const containers = jsonData.units[unit].containers;
+            for (let containerId in containers) {
+                const containerButton = document.createElement('div');
+                containerButton.className = 'container';
+                containerButton.innerText = `Container ${containerId}`;
+                if (containers[containerId].length > 0) {
+                    containerButton.classList.add('alert');
+                } else {
+                    containerButton.classList.add('no-issues');
+                }
+                containerButton.onclick = () => showContainer(unit, containerId);
+                containerList.appendChild(containerButton);
+            }
+        }
+
+        function showContainer(unit, container) {
+            if (!jsonData.units || !jsonData.units[unit] || !jsonData.units[unit].containers[container]) {
+                alert("Container data is not available.");
+                return;
+            }
+
+            document.getElementById('unit-view').classList.add('hidden');
+            document.getElementById('container-view').classList.remove('hidden');
+
+            const containerData = jsonData.units[unit].containers[container];
+            document.getElementById('container-title').innerText = `Unit ${unit} - Container ${container} 的异常信息`;
+            const issueList = document.getElementById('issue-list');
+            issueList.innerHTML = '';
+
+            if (containerData.length > 0) {
+                containerData.forEach(issue => {
+                    const issueItem = document.createElement('div');
+                    issueItem.innerText = `- ${issue}`;
+                    issueList.appendChild(issueItem);
+                });
+            } else {
+                const noIssueItem = document.createElement('div');
+                noIssueItem.innerText = "No issues detected.";
+                issueList.appendChild(noIssueItem);
+            }
+        }
+
+        function backToMain() {
+            document.getElementById('unit-view').classList.add('hidden');
+            document.getElementById('main-view').classList.remove('hidden');
+        }
+
+        function backToUnit() {
+            document.getElementById('container-view').classList.add('hidden');
+            document.getElementById('unit-view').classList.remove('hidden');
+        }
+
+        // Highlight units with issues
+        function highlightUnits() {
+            if (!jsonData.units) {
+                alert("No units data available in JSON.");
+                return;
+            }
+
+            for (let unitId in jsonData.units) {
+                const unitData = jsonData.units[unitId];
+                let hasIssues = false;
+
+                for (let containerId in unitData.containers) {
+                    if (unitData.containers[containerId].length > 0) {
+                        hasIssues = true;
+                        break;
+                    }
+                }
+
+                const unitButton = document.getElementById(`unit-${unitId}`);
+                if (unitButton) {
+                    if (hasIssues) {
+                        unitButton.classList.add('alert');
+                    } else {
+                        unitButton.classList.add('no-issues');
+                    }
+                }
+            }
+        }
+
+        // Load JSON data on page load
+        window.onload = loadJsonData;
+    </script>
+</body>
+</html>
